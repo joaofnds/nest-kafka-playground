@@ -1,7 +1,7 @@
-import { Controller, Inject, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Controller, Inject, Logger, OnModuleDestroy, OnModuleInit, ValidationPipe } from '@nestjs/common';
 import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
 import { ParcelsService } from './parcels.service';
-import { CreateParcelDto } from './dto/create-parcel.dto';
+import { KafkaCreateParcelDto } from './dto/create-parcel.dto';
 import { UpdateParcelDto } from './dto/update-parcel.dto';
 import { Producer } from '@nestjs/microservices/external/kafka.interface';
 
@@ -24,9 +24,9 @@ export class ParcelsController implements OnModuleInit, OnModuleDestroy {
   }
 
   @MessagePattern('createParcel')
-  create(@Payload() createParcelDto: CreateParcelDto) {
+  create(@Payload(new ValidationPipe()) createParcelDto: KafkaCreateParcelDto) {
     Logger.debug(createParcelDto, ParcelsController.name)
-    return this.parcelsService.create(createParcelDto);
+    return this.parcelsService.create(createParcelDto.value);
   }
 
   @MessagePattern('findAllParcels')
