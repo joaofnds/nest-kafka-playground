@@ -15,7 +15,7 @@ async function bootstrap() {
         brokers: ['host.docker.internal:9094'],
       },
       consumer: {
-        groupId: 'test-group'
+        groupId: 'test-group' + Math.random()
       }
     }
   });

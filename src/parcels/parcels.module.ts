@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ParcelsService } from './parcels.service';
-import { ParcelsController } from './parcels.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { CheckParcelService } from './check-parcel.service';
+import { ParcelsController } from './parcels.controller';
+import { ParcelsService } from './parcels.service';
 
 @Module({
   imports: [
@@ -11,17 +12,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         transport: Transport.KAFKA,
         options: {
           client: {
-            clientId: 'nest',
             brokers: ['host.docker.internal:9094'],
           },
           consumer: {
-            groupId: 'test-group'
-          }
-        }
-      }
-    ])
+            groupId: 'test-group' + Math.random(),
+          },
+        },
+      },
+    ]),
   ],
-  controllers: [ParcelsController],
-  providers: [ParcelsService]
+  controllers: [ParcelsController, CheckParcelService],
+  providers: [ParcelsService],
 })
 export class ParcelsModule {}

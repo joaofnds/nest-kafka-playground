@@ -1,32 +1,39 @@
-import { Controller, Inject, Logger, OnModuleDestroy, OnModuleInit, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Inject,
+  Logger,
+  OnModuleInit,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
-import { ParcelsService } from './parcels.service';
 import { KafkaCreateParcelDto } from './dto/create-parcel.dto';
 import { UpdateParcelDto } from './dto/update-parcel.dto';
-import { Producer } from '@nestjs/microservices/external/kafka.interface';
+import { ParcelsService } from './parcels.service';
 
 @Controller()
-export class ParcelsController implements OnModuleInit, OnModuleDestroy {
-  producer: Producer;
-
+export class ParcelsController implements OnModuleInit {
   constructor(
     private readonly parcelsService: ParcelsService,
     @Inject('KAFKA_SERVER')
-    private readonly kafkaClient: ClientKafka
-  ) { }
+    private readonly kafkaClient: ClientKafka,
+  ) {}
 
-  async onModuleInit() {
-    this.producer = await this.kafkaClient.connect();
-  }
-
-  onModuleDestroy() {
-    this.kafkaClient.close();
+  onModuleInit() {
+    this.kafkaClient.subscribeToResponseOf('checkParcel');
   }
 
   @MessagePattern('createParcel')
-  create(@Payload(new ValidationPipe()) createParcelDto: KafkaCreateParcelDto) {
-    Logger.debug(createParcelDto, ParcelsController.name)
-    return this.parcelsService.create(createParcelDto.value);
+  async create(
+    @Payload(new ValidationPipe())
+    createParcelDto: KafkaCreateParcelDto,
+  ) {
+    Logger.debug(createParcelDto.value, ParcelsController.name);
+
+    this.kafkaClient
+      .send('checkParcel', JSON.stringify(createParcelDto.value))
+      .subscribe((reply) => {
+        Logger.debug({ reply }, ParcelsController.name);
+      });
   }
 
   @MessagePattern('findAllParcels')
